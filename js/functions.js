@@ -1,5 +1,5 @@
 function lineSize(string, length){
-  return string.lenght <= length;
+  return string.length <= length;
 }
 lineSize('проверяемая строка', 20);
 function isPalindrome (str){
