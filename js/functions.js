@@ -1,18 +1,22 @@
-function parseTime(timeString) {
-  const [hour, minute] = timeString.split(':');
-  return hour * 60 + Number(minute);
-}
-function chekMeeting(dayStart, dayEnd, meetingStart, meetingDuration) {
-  const dayStartInMinutes = parseTime(dayStart);
-  const dayEndInMinutes = parseTime(meetingStart);
-  const meetingStartInMinutes = parseTime(meetingStart);
-  return (
-    meetingStartInMinutes >= dayStartInMinutes &&
-    meetingStartInMinutes + meetingDuration <= dayEndInMinutes
-  );
-}
-chekMeeting('08:00', '17:30', '14:00', 90);
-chekMeeting('8:0', '10:0', '8:0', 120);
-chekMeeting('08:00', '14:30', '14:00', 90);
-chekMeeting('14:00', '17:30', '08:0', 90);
-chekMeeting('8:00', '17:30', '08:00', 900);
+const thumbnailTemplate = document
+  .querySelector('#picture')
+  .content.querySelector('.picture');
+const container = document.querySelector('.pictures');
+const createThumbnail = ({ comments, description, likes, url, id }) => {
+  const thumbnail = thumbnailTemplate.cloneNode(true);
+  thumbnail.querySelector('.picture__img').src = url;
+  thumbnail.querySelector('.picture__img').alt = description;
+  thumbnail.querySelector('.picture__comments').textContent = comments.length;
+  thumbnail.querySelector('.picture__likes').textContent = likes;
+  thumbnail.dataset.thumbnailId = id;
+  return thumbnail;
+};
+const renderThumbnails = (pictures) => {
+  const fragment = document.createDocumentFragment();
+  pictures.forEach((picture) => {
+    const thumbnail = createThumbnail(picture);
+    fragment.append(thumbnail);
+  });
+  container.append(fragment);
+};
+export { renderThumbnails };
