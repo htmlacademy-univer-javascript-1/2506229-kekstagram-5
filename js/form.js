@@ -1,78 +1,98 @@
-import { resetScale } from './scale.js';
-import { init, reset } from './effects.js';
-const MAX_COMMENT_LENGTH = 140;
-const MAX_HASHTAG_COUNT = 5;
-const VALID_HASHTAG = /^#[a-zа-яё0-9]{1,19}$/i;
-const imgUploadForm = document.querySelector('.img-upload__form');
-const imgUploadOverlay = document.querySelector('.img-upload__overlay');
-const imgUploadCancel = document.querySelector('.img-upload__cancel');
-const textHashtags = document.querySelector('.text__hashtags');
-const textDescription = document.querySelector('.text__description');
-const body = document.body;
-const pristine = new Pristine(imgUploadForm, {
-  classTo: 'img-upload__field-wrapper',
-  errorTextParent: 'img-upload__field-wrapper',
-});
-function validateComment(value) {
-  return value.length <= MAX_COMMENT_LENGTH;
-}
-pristine.addValidator(
-  imgUploadForm.querySelector('.text__description'),
-  validateComment,
-  'Длина комментария не может составлять больше 140 символов'
-);
-const splitHashtags = (hashtags) => hashtags.trim().split(/\s+/);
-function validateHashtagItems(value) {
-  const hashtags = splitHashtags(value);
-  const isValidCount = hashtags.length <= MAX_HASHTAG_COUNT;
-  const isValidText = hashtags.every((hashtag) => VALID_HASHTAG.test(hashtag));
-  const isUnique = hashtags.length === new Set(hashtags.map((hashtag) => hashtag.toLowerCase())).size;
-  return {isValidCount, isValidText, isUnique};
-}
-function validateHashtag(value) {
-  const {isValidCount, isValidText, isUnique} = validateHashtagItems(value);
-  return isValidCount && isValidText && isUnique;
-}
-const getHashtagErrorMessage = (value) => {
-  const {isValidCount, isValidText, isUnique} = validateHashtagItems(value);
-  if (!isValidCount) {
-    return 'Нельзя указать больше пяти хэш-тегов';
-  }
-  if (!isValidText) {
-    return 'Строка после решётки должна состоять из букв и чисел и иметь длину не более 20 символов';
-  }
-  if (!isUnique) {
-    return 'Один и тот же хэш-тег не может быть использован дважды';
-  }
-  return true;
+import { isEscKey } from './utils.js';
+import {pristine} from './hashtag-pristine.js';
+import {initRadios, resetFilters } from './effects.js';
+import { uploadData } from './api.js';
+import { onSuccess, onFail } from './form-submit.js';
+const body = document.querySelector('body');
+const formUpload = document.querySelector('.img-upload__form');
+const fileUpload = document.querySelector('#upload-file');
+const uploadOverlay = document.querySelector('.img-upload__overlay');
+const closeButton = document.querySelector('#upload-cancel');
+const effects = document.querySelectorAll('.effects__preview');
+const mainPicture = document.querySelector('.img-upload__preview img');
+const plusButton = document.querySelector('.scale__control--bigger');
+const minusButton = document.querySelector('.scale__control--smaller');
+const scaleControl = document.querySelector('.scale__control--value');
+const imagePreview = document.querySelector('.img-upload__preview img');
+const Zoom = {
+  STEP: 25,
+  MIN: 25,
+  MAX: 100,
 };
-pristine.addValidator(
-  imgUploadForm.querySelector('.text__hashtags'),
-  validateHashtag,
-  getHashtagErrorMessage
-);
-imgUploadForm.addEventListener('submit', (evt) => {
+const onFormUploadSubmit = (evt) => {
   evt.preventDefault();
-  pristine.validate();
-});
-const showForm = () => {
-  imgUploadOverlay.classList.remove('hidden');
-  body.classList.add('modal-open');
-  document.addEventListener('keydown', onDocumentKeydown);
+  const formData = new FormData(evt.target);
+  uploadData(onSuccess, onFail, 'POST', formData);
+};
+const openForm = () => {
+  closeButton.addEventListener('click', onCloseFormClick);
+  document.addEventListener('keydown', onCloseFormEscDown);
+  fileUpload.addEventListener('change', onFileUploadChange);
+  scaleControl.value = '100%';
+  formUpload.addEventListener('submit', onFormUploadSubmit);
+};
+const changeZoom = (factor = 1) => {
+  let size = parseInt(scaleControl.value, 10) + (Zoom.STEP * factor);
+  if(size < Zoom.MIN){
+    size = Zoom.MIN;
+    return;
+  }
+  if(size > Zoom.MAX){
+    size = Zoom.MAX;
+    return;
+  }
+  scaleControl.value = `${size}%`;
+  imagePreview.style.transform = `scale(${size / 100})`;
+};
+const initButtons = () => {
+  const onMinusButtonClick = () => {
+    changeZoom(-1);
+  };
+  const onPlusButtonClick = () => {
+    changeZoom(1);
+  };
+  minusButton.addEventListener('click', onMinusButtonClick);
+  plusButton.addEventListener('click', onPlusButtonClick);
 };
 const closeForm = () => {
-  imgUploadForm.reset();
-  imgUploadOverlay.classList.add('hidden');
+  uploadOverlay.classList.add('hidden');
   body.classList.remove('modal-open');
-  document.removeEventListener('keydown', onDocumentKeydown);
+  closeButton.removeEventListener('click', onCloseFormClick);
+  document.removeEventListener('keydown', onCloseFormEscDown);
+  formUpload.removeEventListener('submit', onFormUploadSubmit);
+  formUpload.reset();
+  pristine.reset();
+  scaleControl.value = '100%';
+  imagePreview.style.transform = 'scale(100%)';
+  resetFilters();
 };
-function onDocumentKeydown(evt) {
-  const isInputFocused = [textHashtags, textDescription].some((el) => el === evt.target);
-  if (evt.key === 'Escape' && !isInputFocused){
+function onCloseFormClick (evt) {
+  evt.preventDefault();
+  closeForm();
+}
+function onCloseFormEscDown (evt) {
+  if(isEscKey(evt) &&
+  !evt.target.classList.contains('text__hashtag') &&
+  !evt.target.classList.contains('text__description') &&
+  !body.querySelector('.error')){
     evt.preventDefault();
     closeForm();
   }
 }
-imgUploadCancel.addEventListener('keydown', onDocumentKeydown);
-imgUploadCancel.addEventListener('click', closeForm);
-imgUploadForm.addEventListener('change', showForm);
+const changeImages = () => {
+  const file = fileUpload.files[0];
+  const fileUrl = URL.createObjectURL(file);
+  mainPicture.src = fileUrl;
+  effects.forEach((effect) => {
+    effect.style.backgroundImage = `url('${fileUrl}')`;
+  });
+};
+function onFileUploadChange () {
+  uploadOverlay.classList.remove('hidden');
+  body.classList.add('modal-open');
+  openForm();
+  changeImages();
+  initButtons();
+  initRadios();
+}
+export {openForm, closeForm};
