@@ -2,6 +2,7 @@ const getMinutes = (time) =>{
   const result = time.split(':');
   return parseInt(result[0], 10) * 60 + parseInt(result[1], 10);
 };
+
 const IsMeetUpEnable = (startTime, endTime, startMeet, meetLength) => {
   const meetStartMinutes = getMinutes(startMeet);
   const startMinutes = getMinutes(startTime);
