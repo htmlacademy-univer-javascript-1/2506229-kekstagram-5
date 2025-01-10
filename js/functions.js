@@ -1,22 +1,12 @@
-const thumbnailTemplate = document
-  .querySelector('#picture')
-  .content.querySelector('.picture');
-const container = document.querySelector('.pictures');
-const createThumbnail = ({ comments, description, likes, url, id }) => {
-  const thumbnail = thumbnailTemplate.cloneNode(true);
-  thumbnail.querySelector('.picture__img').src = url;
-  thumbnail.querySelector('.picture__img').alt = description;
-  thumbnail.querySelector('.picture__comments').textContent = comments.length;
-  thumbnail.querySelector('.picture__likes').textContent = likes;
-  thumbnail.dataset.thumbnailId = id;
-  return thumbnail;
+const getMinutes = (time) =>{
+  const result = time.split(':');
+  return parseInt(result[0], 10) * 60 + parseInt(result[1], 10);
 };
-const renderThumbnails = (pictures) => {
-  const fragment = document.createDocumentFragment();
-  pictures.forEach((picture) => {
-    const thumbnail = createThumbnail(picture);
-    fragment.append(thumbnail);
-  });
-  container.appendChild(fragment);
+
+const IsMeetUpEnable = (startTime, endTime, startMeet, meetLength) => {
+  const meetStartMinutes = getMinutes(startMeet);
+  const startMinutes = getMinutes(startTime);
+  const endMinutes = getMinutes(endTime);
+  return meetStartMinutes + meetLength <= endMinutes && meetStartMinutes >= startMinutes && (endMinutes - startMinutes) >= meetLength;
 };
-export { renderThumbnails };
+IsMeetUpEnable('08:00', '17:30', '14:00', 90);
