@@ -5,7 +5,6 @@ const successMessageTemplate = document.querySelector('#success').content.queryS
 const errorMessageTemplate = body.querySelector('#error').content.querySelector('section');
 const onBodyClick = (evt) => {
   const clickElem = evt.target;
-
   if(clickElem.classList.contains('success__inner') || clickElem.classList.contains('error__inner')){
     return;
   }

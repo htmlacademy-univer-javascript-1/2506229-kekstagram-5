@@ -1,26 +1,37 @@
 const MAX_SYMBOLS = 20;
 const MAX_HASHTAGS = 5;
+
 const formUpload = document.querySelector('.img-upload__form');
 const submitBtn = document.querySelector('#upload-submit');
+
 const pristine = new Pristine(formUpload, {
   classTo: 'img-upload__field-wrapper',
   errorTextParent: 'img-upload__field-wrapper',
   errorTextTag: 'p',
   errorTextClass: 'img-upload__error'
 }, true);
+
+
 const inputHashtag = document.querySelector('.text__hashtags');
+
 let errorMessage = '';
+
 const error = () => errorMessage;
+
 const hashtagHandler = (value) =>{
   errorMessage = '';
+
   const inputText = value.toLowerCase().trim();
+
   if(!inputText) {
     return true;
   }
+
   const inputArray = inputText.split(/\s+/);
   if(inputArray.length === 0){
     return true;
   }
+
   const rules = [
     {
       check: inputArray.some((item) => item.indexOf('#', 1) >= 1),
