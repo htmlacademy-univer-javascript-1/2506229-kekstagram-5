@@ -3,6 +3,7 @@ import './big-picture.js';
 import './hashtag-pristine.js';
 import { openForm } from './form.js';
 import { loadData } from './api.js';
+import { initFilters } from './filters.js';
 let pictures = [];
 const onSuccess = (data) => {
   pictures = data.slice();
@@ -24,3 +25,5 @@ const onFail = () =>{
 };
 loadData(onSuccess, onFail);
 openForm();
+initFilters();
+export {pictures};
